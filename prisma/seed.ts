@@ -9,7 +9,7 @@ async function main() {
   for (const c of CITIES) {
     await prisma.city.upsert({ where: { slug: c.slug }, update: { name: c.name, state: c.state, live: c.live, lat: c.lat, lng: c.lng, areas: JSON.stringify(c.areas) }, create: { slug: c.slug, name: c.name, state: c.state, live: c.live, lat: c.lat, lng: c.lng, areas: JSON.stringify(c.areas) } });
   }
-  const admin = await prisma.user.upsert({ where: { email: "admin@reelwala.in" }, update: {}, create: { email: "admin@reelwala.in", name: "Reelwala Ops", role: "ADMIN", referralCode: "RWADMIN" } });
+  const admin = await prisma.user.upsert({ where: { email: "admin@reelwala.in" }, update: { phone: "9999999990", role: "ADMIN" }, create: { email: "admin@reelwala.in", phone: "9999999990", name: "Reelwala Ops", role: "ADMIN", referralCode: "RWADMIN" } }); // dev admin login: 9999999990 / OTP 123456
   const demo = await prisma.user.upsert({ where: { phone: "9999999999" }, update: {}, create: { phone: "9999999999", name: "Demo Customer", email: "demo@reelwala.in", role: "CUSTOMER", referralCode: "DEMO100" } });
 
   for (const [i, r] of REELERS.map((x, i) => [i, x] as const)) {
@@ -61,6 +61,8 @@ async function main() {
       const total = 1999;
       const bk = await prisma.booking.create({ data: { code: "RW-S" + (ri * 10 + k).toString(36).toUpperCase().padStart(5, "0"), userId: u.id, reelerId: reeler.id, cityId: city.id, occasion: ["Birthday", "Wedding", "Café Launch"][k], date: d, startTime: "18:00", durationHrs: 3, address: "Seeded booking", packageKey: "party", packagePrice: total, addons: "[]", contactName: String(name), contactPhone: phone, subtotal: total, total, paymentMode: "FULL", amountPaid: total, amountDue: 0, status: "DELIVERED", deliveredAt: d } });
       await prisma.review.create({ data: { bookingId: bk.id, reelerId: reeler.id, userId: u.id, rating: Number(rating), text: String(text) } });
+      await prisma.payment.create({ data: { bookingId: bk.id, provider: "simulated", orderId: "seed_" + bk.code, paymentId: "seedpay_" + bk.code, amount: total, kind: "FULL", status: "PAID", createdAt: d } });
+      await prisma.payout.create({ data: { reelerId: reeler.id, bookingId: bk.id, gross: total, commission: Math.round(total * 0.15), net: total - Math.round(total * 0.15), status: k === 0 ? "PENDING" : "PAID", paidAt: k === 0 ? null : d, createdAt: d } });
     }
   }
 

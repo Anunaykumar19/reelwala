@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Clock3, GraduationCap, IndianRupee, AtSign as IG, Loader2, Smartphone, TrendingUp, Upload, Wallet, BadgeCheck } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,7 +11,7 @@ import UploadZone, { type UploadedFile } from "@/components/edit/UploadZone";
 import { CITIES, LIVE_CITIES } from "@/lib/data/cities";
 import { OCCASIONS } from "@/lib/data/occasions";
 import { VIDEOS } from "@/lib/data/videos";
-import { cn, inr } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const STEPS = ["About you", "Where you shoot", "Your gear", "Sample reels", "Verification"];
 const STYLES = ["cinematic", "trendy", "aesthetic", "fast-cut", "wedding", "urban"];
@@ -20,7 +19,6 @@ const inp = "h-12 w-full rounded-2xl bg-surface-2 border border-fg/10 px-4 text-
 const SAMPLE = [VIDEOS.party[1], VIDEOS.wedding[2], VIDEOS.cafe[1]];
 
 export default function JoinView({ loggedIn }: { loggedIn: boolean }) {
-  const router = useRouter();
   const [shoots, setShoots] = useState(4);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
