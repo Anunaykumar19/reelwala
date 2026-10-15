@@ -1,0 +1,279 @@
+// Reelwala data model. Dev: SQLite. Prod: switch provider to "postgresql" and set DATABASE_URL (Supabase/Neon).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  phone     String?  @unique
+  image     String?
+  role      String   @default("CUSTOMER") // CUSTOMER | REELER | ADMIN
+  referralCode String? @unique
+  referredBy   String?
+  credits   Int      @default(0) // paise-free: whole rupees
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reeler    Reeler?
+  bookings  Booking[]
+  editOrders EditOrder[]
+  reviews   Review[]
+  addresses Address[]
+}
+
+model City {
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  name    String
+  state   String
+  live    Boolean @default(true)
+  lat     Float
+  lng     Float
+  areas   String  // JSON array
+  reelers Reeler[]
+  bookings Booking[]
+}
+
+model Reeler {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  slug          String   @unique
+  displayName   String
+  avatar        String?
+  bio           String?
+  cityId        String
+  city          City     @relation(fields: [cityId], references: [id])
+  area          String?
+  lat           Float?
+  lng           Float?
+  instagram     String?
+  tags          String   // JSON array of occasions
+  styles        String   // JSON array
+  equipment     String?
+  startingPrice Int      @default(999)
+  rating        Float    @default(0)
+  reviewCount   Int      @default(0)
+  delivered     Int      @default(0)
+  responseTime  String   @default("~15 min")
+  status        String   @default("PENDING") // PENDING | VERIFIED | REJECTED | SUSPENDED
+  idDocUrl      String?
+  upiId         String?
+  bankJson      String?
+  coverReel     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reels        PortfolioReel[]
+  packages     ReelerPackage[]
+  bookings     Booking[]
+  reviews      Review[]
+  payouts      Payout[]
+  blockedDates BlockedDate[]
+}
+
+model PortfolioReel {
+  id        String  @id @default(cuid())
+  reelerId  String
+  reeler    Reeler  @relation(fields: [reelerId], references: [id], onDelete: Cascade)
+  url       String
+  thumb     String?
+  caption   String?
+  occasion  String?
+  order     Int     @default(0)
+  approved  Boolean @default(true)
+}
+
+model ReelerPackage {
+  id        String @id @default(cuid())
+  reelerId  String
+  reeler    Reeler @relation(fields: [reelerId], references: [id], onDelete: Cascade)
+  key       String // starter | party | event
+  price     Int
+  hours     Int
+  reels     Int
+  @@unique([reelerId, key])
+}
+
+model BlockedDate {
+  id       String   @id @default(cuid())
+  reelerId String
+  reeler   Reeler   @relation(fields: [reelerId], references: [id], onDelete: Cascade)
+  date     DateTime
+  reason   String?
+  @@unique([reelerId, date])
+}
+
+model Address {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label   String?
+  line    String
+  area    String?
+  city    String
+  lat     Float?
+  lng     Float?
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  code          String   @unique // RW-XXXXXX human id
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  reelerId      String?
+  reeler        Reeler?  @relation(fields: [reelerId], references: [id])
+  autoAssign    Boolean  @default(false)
+  cityId        String
+  city          City     @relation(fields: [cityId], references: [id])
+  occasion      String
+  date          DateTime
+  startTime     String   // "18:00"
+  durationHrs   Int
+  address       String
+  area          String?
+  lat           Float?
+  lng           Float?
+  packageKey    String
+  packagePrice  Int
+  addons        String   // JSON [{id,name,price,qty}]
+  extraReels    Int      @default(0)
+  instructions  String?
+  songRefs      String?
+  instagram     String?
+  contactName   String
+  contactPhone  String
+  contactEmail  String?
+  couponCode    String?
+  discount      Int      @default(0)
+  subtotal      Int
+  total         Int
+  paymentMode   String   // TOKEN | FULL
+  amountPaid    Int      @default(0)
+  amountDue     Int      @default(0)
+  status        String   @default("PENDING_PAYMENT")
+  // PENDING_PAYMENT | BOOKED | ASSIGNED | SHOOT_DONE | EDITING | DELIVERED | CANCELLED | REFUNDED
+  shootDoneAt   DateTime?
+  deliveredAt   DateTime?
+  slaDeadline   DateTime?
+  lateFlag      Boolean  @default(false)
+  deliverables  String?  // JSON [{url,thumb,name}]
+  revisionUsed  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  payments Payment[]
+  review   Review?
+  payout   Payout?
+  events   BookingEvent[]
+}
+
+model BookingEvent {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type      String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model EditOrder {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  style       String
+  musicVibe   String
+  captions    Boolean  @default(true)
+  reelCount   Int
+  express     Boolean  @default(false)
+  notes       String?
+  files       String   // JSON [{url,name,size}]
+  total       Int
+  status      String   @default("PENDING_PAYMENT") // PENDING_PAYMENT | QUEUED | EDITING | DELIVERED | CANCELLED
+  deliverables String?
+  slaDeadline DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payments    Payment[]
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  editOrderId   String?
+  editOrder     EditOrder? @relation(fields: [editOrderId], references: [id])
+  provider      String   @default("razorpay") // razorpay | simulated
+  orderId       String?  @unique
+  paymentId     String?  @unique
+  signature     String?
+  amount        Int
+  currency      String   @default("INR")
+  kind          String   // TOKEN | FULL | BALANCE | EDIT
+  status        String   @default("CREATED") // CREATED | PAID | FAILED | REFUNDED
+  refundId      String?
+  refundAmount  Int      @default(0)
+  raw           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Payout {
+  id         String   @id @default(cuid())
+  reelerId   String
+  reeler     Reeler   @relation(fields: [reelerId], references: [id])
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  gross      Int
+  commission Int
+  net        Int
+  status     String   @default("PENDING") // PENDING | PAID | HELD
+  paidAt     DateTime?
+  reference  String?
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  reelerId  String
+  reeler    Reeler   @relation(fields: [reelerId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int
+  text      String?
+  mediaUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  type       String   // FLAT | PERCENT
+  value      Int
+  minAmount  Int      @default(0)
+  maxUses    Int?
+  used       Int      @default(0)
+  active     Boolean  @default(true)
+  expiresAt  DateTime?
+}
+
+model QuickRequest {
+  id        String   @id @default(cuid())
+  occasion  String
+  date      DateTime
+  city      String
+  phone     String
+  budget    String
+  status    String   @default("NEW") // NEW | CALLED | CONVERTED | LOST
+  createdAt DateTime @default(now())
+}
