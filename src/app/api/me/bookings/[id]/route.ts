@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { createRazorpayOrder, razorpayConfigured } from "@/lib/razorpay";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -23,6 +24,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (b.revisionUsed) return NextResponse.json({ error: "Free revision already used. WhatsApp us for paid edits." }, { status: 400 });
     await prisma.booking.update({ where: { id: b.id }, data: { revisionUsed: true, status: "EDITING", events: { create: { type: "REVISION", note: "Free revision requested" } } } });
     return NextResponse.json({ ok: true });
+  }
+  if (action === "pay_balance") {
+    if (b.amountDue <= 0) return NextResponse.json({ error: "Nothing due" }, { status: 400 });
+    if (["CANCELLED", "REFUNDED", "PENDING_PAYMENT"].includes(b.status)) return NextResponse.json({ error: "Booking not payable" }, { status: 400 });
+    const existing = await prisma.payment.findFirst({ where: { bookingId: b.id, kind: "BALANCE", status: "CREATED" } });
+    if (razorpayConfigured()) {
+      const order = existing?.provider === "razorpay" && existing.orderId ? { id: existing.orderId } : await createRazorpayOrder(b.amountDue, b.code + "-BAL", { bookingCode: b.code, kind: "BALANCE" });
+      if (!existing) await prisma.payment.create({ data: { bookingId: b.id, provider: "razorpay", orderId: order.id, amount: b.amountDue, kind: "BALANCE" } });
+      return NextResponse.json({ payment: { provider: "razorpay", orderId: order.id, amount: b.amountDue, keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID, prefill: { name: b.contactName, contact: b.contactPhone } } });
+    }
+    const pay = existing || await prisma.payment.create({ data: { bookingId: b.id, provider: "simulated", orderId: "sim_bal_" + b.code, amount: b.amountDue, kind: "BALANCE" } });
+    return NextResponse.json({ payment: { provider: "simulated", orderId: pay.orderId, amount: b.amountDue } });
   }
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }

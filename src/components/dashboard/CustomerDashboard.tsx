@@ -14,6 +14,7 @@ import MagneticButton from "@/components/ui/MagneticButton";
 import { STATUS_LABEL, STATUS_TONE } from "@/lib/status";
 import { cn, inr, waLink } from "@/lib/utils";
 import { useUI } from "@/store/ui";
+import { useRazorpay } from "@/hooks/useRazorpay";
 
 const TABS = [["bookings", "Bookings", CalendarDays], ["reels", "My reels", Film], ["payments", "Payments", Receipt], ["addresses", "Addresses", Home], ["support", "Support", LifeBuoy]] as const;
 
@@ -21,6 +22,19 @@ export default function CustomerDashboard({ user, bookings, editOrders, payments
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("bookings");
   const router = useRouter();
   const openViewer = useUI((s) => s.openViewer);
+  const { open } = useRazorpay();
+  const payBalance = async (b: any) => {
+    const r = await fetch(`/api/me/bookings/${b.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "pay_balance" }) });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.error);
+    const done = () => { toast.success("Balance paid. Reeler payout released 🎉"); router.refresh(); };
+    if (d.payment.provider === "razorpay") {
+      await open({ keyId: d.payment.keyId, orderId: d.payment.orderId, amount: d.payment.amount, description: `Balance · ${b.code}`, prefill: d.payment.prefill, onSuccess: async (res) => { const v = await fetch("/api/payments/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(res) }); if (v.ok) done(); else toast.error("Verification failed"); } });
+    } else {
+      const s = await fetch("/api/payments/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: d.payment.orderId }) });
+      if (s.ok) done(); else toast.error("Payment failed");
+    }
+  };
   const upcoming = bookings.filter((b) => !["DELIVERED", "CANCELLED", "REFUNDED"].includes(b.status));
   const delivered = bookings.filter((b) => b.status === "DELIVERED");
   const act = async (id: string, action: string) => {
@@ -82,7 +96,9 @@ export default function CustomerDashboard({ user, bookings, editOrders, payments
                       {b.status === "DELIVERED" && <button onClick={() => setTab("reels")} className="rounded-full bg-brand px-3 py-1.5 text-white font-semibold flex items-center gap-1"><Download size={12} /> Get reels</button>}
                       {b.status === "DELIVERED" && !b.revisionUsed && <button onClick={() => act(b.id, "revision")} className="rounded-full glass px-3 py-1.5 flex items-center gap-1"><RotateCcw size={12} /> Free revision</button>}
                       {["BOOKED", "ASSIGNED", "PENDING_PAYMENT"].includes(b.status) && <button onClick={() => act(b.id, "cancel")} className="rounded-full glass px-3 py-1.5 text-muted hover:text-orange flex items-center gap-1"><XCircle size={12} /> Cancel</button>}
-                      {b.amountDue > 0 && live && <span className="rounded-full bg-orange/15 text-orange px-3 py-1.5">Due after shoot: {inr(b.amountDue)}</span>}
+                      {b.amountDue > 0 && !["CANCELLED", "REFUNDED", "PENDING_PAYMENT"].includes(b.status) && (["SHOOT_DONE", "EDITING", "DELIVERED"].includes(b.status)
+                        ? <button onClick={() => payBalance(b)} className="rounded-full bg-orange px-3 py-1.5 text-white font-semibold">Pay balance {inr(b.amountDue)}</button>
+                        : <span className="rounded-full bg-orange/15 text-orange px-3 py-1.5">Due after shoot: {inr(b.amountDue)}</span>)}
                     </div>
                   </div>
                 );
