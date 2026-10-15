@@ -22,7 +22,8 @@ export default function BookingFlow() {
   useEffect(() => {
     if (!b.hydrated) return;
     const patch: any = {};
-    const reeler = sp.get("reeler"), pkg = sp.get("package"), occ = sp.get("occasion"), city = sp.get("city");
+    const reeler = sp.get("reeler"), pkg = sp.get("package"), occ = sp.get("occasion"), city = sp.get("city"), date = sp.get("date");
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) patch.date = date;
     if (reeler) { patch.reelerSlug = reeler; patch.autoAssign = false; }
     if (pkg && ["starter", "party", "event"].includes(pkg)) patch.packageKey = pkg;
     if (occ) { const o = OCCASIONS.find((x) => x.slug === occ || x.name === occ); if (o) { patch.occasion = o.name; if (b.step === 0) patch.step = 1; } }

@@ -37,6 +37,32 @@ async function main() {
     for (const d of [d1, d2]) await prisma.blockedDate.upsert({ where: { reelerId_date: { reelerId: reeler.id, date: d } }, update: {}, create: { reelerId: reeler.id, date: d, reason: "Booked" } });
   }
 
+  // reviews from completed bookings so profiles look lived-in
+  const REVIEWS = [
+    ["Ritika S.", 5, "Booked at 11am, reeler aaya 4pm, reels next morning. Party went viral in the family group 😂"],
+    ["Manav T.", 5, "Super professional, got 5 reels in 20 hours. Trending audio choice was perfect."],
+    ["Café Amora", 5, "Our opening reel hit 80K views. A cameraman quoted ₹15K for the same thing."],
+    ["Harsh & Ananya", 5, "So chill with the family. The haldi reel made my nani cry. Would book again."],
+    ["Sneha K.", 4, "Great reels, one revision needed on captions and it was done in an hour."],
+    ["Aditya R.", 5, "Fast cuts, clean colour grade, delivered before the deadline. Paisa vasool."],
+  ];
+  const allReelers = await prisma.reeler.findMany();
+  for (let ri = 0; ri < allReelers.length; ri++) {
+    const reeler = allReelers[ri];
+    const existing = await prisma.review.count({ where: { reelerId: reeler.id } });
+    if (existing > 0) continue;
+    const city = await prisma.city.findUniqueOrThrow({ where: { id: reeler.cityId } });
+    for (let k = 0; k < 3; k++) {
+      const [name, rating, text] = REVIEWS[(ri + k) % REVIEWS.length];
+      const phone = `98${String(ri * 10 + k).padStart(8, "0")}`;
+      const u = await prisma.user.upsert({ where: { phone }, update: {}, create: { phone, name: String(name), role: "CUSTOMER" } });
+      const d = new Date(); d.setDate(d.getDate() - (7 + k * 9 + ri));
+      const total = 1999;
+      const bk = await prisma.booking.create({ data: { code: "RW-S" + (ri * 10 + k).toString(36).toUpperCase().padStart(5, "0"), userId: u.id, reelerId: reeler.id, cityId: city.id, occasion: ["Birthday", "Wedding", "Café Launch"][k], date: d, startTime: "18:00", durationHrs: 3, address: "Seeded booking", packageKey: "party", packagePrice: total, addons: "[]", contactName: String(name), contactPhone: phone, subtotal: total, total, paymentMode: "FULL", amountPaid: total, amountDue: 0, status: "DELIVERED", deliveredAt: d } });
+      await prisma.review.create({ data: { bookingId: bk.id, reelerId: reeler.id, userId: u.id, rating: Number(rating), text: String(text) } });
+    }
+  }
+
   for (const c of [
     { code: "FIRST100", type: "FLAT", value: 100, minAmount: 999 },
     { code: "REEL20", type: "PERCENT", value: 20, minAmount: 1999, maxUses: 500 },

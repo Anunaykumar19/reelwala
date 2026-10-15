@@ -48,6 +48,6 @@ export const useBooking = create<S>()(
       back: () => set((s) => ({ step: Math.max(0, s.step - 1) })),
       reset: () => set({ ...initial }),
     }),
-    { name: "rw-booking", partialize: (s) => { const { set: _s, next: _n, back: _b, reset: _r, hydrated: _h, setHydrated: _sh, ...rest } = s; return rest; }, onRehydrateStorage: () => (state) => state?.setHydrated() },
+    { name: "rw-booking", partialize: (s) => Object.fromEntries(Object.entries(s).filter(([k, v]) => typeof v !== "function" && k !== "hydrated")) as Partial<S>, onRehydrateStorage: () => (state) => state?.setHydrated() },
   ),
 );

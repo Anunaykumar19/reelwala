@@ -102,3 +102,6 @@ body {
 :root:not(.light) .map-tiles { filter: invert(1) hue-rotate(190deg) brightness(0.85) contrast(0.9) saturate(0.6); }
 .leaflet-container { background: rgb(var(--surface-2)); font-family: inherit; }
 .leaflet-control-zoom a { background: rgb(var(--surface)) !important; color: rgb(var(--fg)) !important; border-color: var(--glass-border) !important; }
+.rw-popup .leaflet-popup-content-wrapper { background: rgb(var(--surface)); color: rgb(var(--fg)); border-radius: 16px; border: 1px solid var(--glass-border); box-shadow: 0 20px 60px -20px rgba(0,0,0,.6); }
+.rw-popup .leaflet-popup-tip { background: rgb(var(--surface)); }
+.rw-popup .leaflet-popup-content { margin: 8px; }
