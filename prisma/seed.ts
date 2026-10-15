@@ -12,9 +12,10 @@ async function main() {
   const admin = await prisma.user.upsert({ where: { email: "admin@reelwala.in" }, update: {}, create: { email: "admin@reelwala.in", name: "Reelwala Ops", role: "ADMIN", referralCode: "RWADMIN" } });
   const demo = await prisma.user.upsert({ where: { phone: "9999999999" }, update: {}, create: { phone: "9999999999", name: "Demo Customer", email: "demo@reelwala.in", role: "CUSTOMER", referralCode: "DEMO100" } });
 
-  for (const r of REELERS) {
+  for (const [i, r] of REELERS.map((x, i) => [i, x] as const)) {
     const city = await prisma.city.findUniqueOrThrow({ where: { slug: r.citySlug } });
-    const user = await prisma.user.upsert({ where: { email: `${r.slug}@reelwala.in` }, update: {}, create: { email: `${r.slug}@reelwala.in`, name: r.name, image: r.avatar, role: "REELER", referralCode: r.slug.toUpperCase().replace(/-/g, "").slice(0, 8) } });
+    const phone = "90000000" + String(i + 1).padStart(2, "0"); // dev login: 9000000001..12, OTP 123456
+    const user = await prisma.user.upsert({ where: { email: `${r.slug}@reelwala.in` }, update: { phone }, create: { email: `${r.slug}@reelwala.in`, phone, name: r.name, image: r.avatar, role: "REELER", referralCode: r.slug.toUpperCase().replace(/-/g, "").slice(0, 8) } });
     const reeler = await prisma.reeler.upsert({
       where: { slug: r.slug },
       update: { rating: r.rating, reviewCount: r.reviews, delivered: r.delivered },

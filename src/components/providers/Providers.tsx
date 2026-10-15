@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "next-auth/react";
 import SmoothScroll from "./SmoothScroll";
 import ThemeInit from "./ThemeInit";
 import Cursor from "@/components/ui/Cursor";
@@ -11,6 +12,7 @@ import QuickBookModal from "@/components/home/QuickBookModal";
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(() => new QueryClient());
   return (
+    <SessionProvider refetchOnWindowFocus={false}>
     <QueryClientProvider client={qc}>
       <ThemeInit />
       <SmoothScroll>{children}</SmoothScroll>
@@ -26,5 +28,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         }}
       />
     </QueryClientProvider>
+    </SessionProvider>
   );
 }

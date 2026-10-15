@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Logo from "./Logo";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import MagneticButton from "@/components/ui/MagneticButton";
@@ -20,6 +21,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const path = usePathname();
+  const { data: session } = useSession();
+  const dash = session?.user?.role === "ADMIN" ? "/admin" : session?.user?.role === "REELER" ? "/reeler/dashboard" : "/dashboard";
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 24);
     h(); window.addEventListener("scroll", h, { passive: true });
@@ -39,7 +42,14 @@ export default function Navbar() {
           </nav>
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/login" className="text-sm font-medium text-muted hover:text-fg px-2">Login</Link>
+            {session?.user ? (
+              <Link href={dash} className="flex items-center gap-2 rounded-full glass pl-1 pr-3 py-1 text-sm font-medium hover:bg-fg/10">
+                <span className="h-7 w-7 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold overflow-hidden">{session.user.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={session.user.image} alt="" className="h-full w-full object-cover" /> : (session.user.name || "R")[0]}</span>
+                <LayoutDashboard size={14} /> Dashboard
+              </Link>
+            ) : (
+              <Link href="/login" className="text-sm font-medium text-muted hover:text-fg px-2">Login</Link>
+            )}
             <MagneticButton href="/book" size="sm">Book a Reeler</MagneticButton>
           </div>
           <button className="md:hidden h-10 w-10 rounded-full glass flex items-center justify-center" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
@@ -57,7 +67,7 @@ export default function Navbar() {
                   <Link href={l.href} className="block rounded-2xl px-4 py-3 text-base font-medium hover:bg-fg/5">{l.label}</Link>
                 </motion.div>
               ))}
-              <Link href="/login" className="block rounded-2xl px-4 py-3 text-base font-medium hover:bg-fg/5">Login / Signup</Link>
+              <Link href={session?.user ? dash : "/login"} className="block rounded-2xl px-4 py-3 text-base font-medium hover:bg-fg/5">{session?.user ? "Dashboard" : "Login / Signup"}</Link>
             </nav>
             <div className="mt-3 flex items-center justify-between px-2">
               <ThemeToggle />
