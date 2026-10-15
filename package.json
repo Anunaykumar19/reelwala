@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/prisma-schema.mjs generate && node scripts/prisma-schema.mjs \"db push\" && next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "prisma db push",
-    "db:seed": "prisma db seed",
-    "postinstall": "prisma generate"
+    "db:push": "node scripts/prisma-schema.mjs \"db push\"",
+    "db:seed": "node scripts/prisma-schema.mjs \"db seed\"",
+    "postinstall": "node scripts/prisma-schema.mjs generate"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
