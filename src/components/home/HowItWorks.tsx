@@ -22,7 +22,6 @@ const STEPS = [
 ];
 
 function Illustration({ step }: { step: number }) {
-  const r = REELERS[0];
   return (
     <div className="relative mx-auto aspect-[4/5] w-full max-w-[380px] md:max-w-[420px]">
       <div className="absolute inset-0 rounded-[2.5rem] glass gradient-border overflow-hidden">
