@@ -1,27 +1,99 @@
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-display: "Clash Display";
+  --bg: 10 10 15;
+  --surface: 20 20 28;
+  --surface-2: 28 28 40;
+  --border: 255 255 255;
+  --fg: 245 245 247;
+  --muted: 156 163 175;
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --grain-opacity: 0.06;
+  color-scheme: dark;
+}
+.light {
+  --bg: 250 249 255;
+  --surface: 255 255 255;
+  --surface-2: 243 241 252;
+  --border: 20 20 40;
+  --fg: 16 14 30;
+  --muted: 92 92 112;
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(20, 20, 40, 0.1);
+  --grain-opacity: 0.035;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: auto; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-bg text-fg font-sans antialiased;
+  overflow-x: hidden;
 }
+::selection { background: #EC4899; color: white; }
+* { -webkit-tap-highlight-color: transparent; }
+@media (pointer: fine) { body.has-cursor, body.has-cursor a, body.has-cursor button { cursor: none; } }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-gradient {
+    @apply bg-brand bg-clip-text text-transparent;
+    background-size: 200% 100%;
   }
+  .text-gradient-animate { animation: shimmer 6s linear infinite; }
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid var(--glass-border);
+  }
+  .gradient-border:where(:not(.absolute):not(.fixed)) { position: relative; }
+  .gradient-border::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+    background: linear-gradient(135deg, rgba(124,58,237,.8), rgba(236,72,153,.6), rgba(249,115,22,.5));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .mask-fade-x { -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .aspect-reel { aspect-ratio: 9 / 16; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+.grain {
+  pointer-events: none; position: fixed; inset: -100%; z-index: 9990; opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 8s steps(10) infinite;
+}
+
+.blob { position: absolute; border-radius: 9999px; filter: blur(90px); opacity: .45; pointer-events: none; will-change: transform; }
+
+.skeleton {
+  background: linear-gradient(90deg, rgb(var(--surface-2)) 25%, rgb(var(--surface)) 37%, rgb(var(--surface-2)) 63%);
+  background-size: 400% 100%; animation: shimmer 1.6s ease infinite;
+}
+
+.glow-border { isolation: isolate; }
+.glow-border:where(:not(.absolute):not(.fixed)) { position: relative; }
+.glow-border::after {
+  content: ""; position: absolute; inset: -2px; border-radius: inherit; z-index: -1;
+  background: conic-gradient(from var(--angle, 0deg), #7C3AED, #EC4899, #F97316, #22D3EE, #7C3AED);
+  filter: blur(10px); opacity: .7; animation: rotate-angle 4s linear infinite;
+}
+@property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes rotate-angle { to { --angle: 360deg; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .grain { animation: none; }
 }
