@@ -38,3 +38,4 @@ next-env.d.ts
 # local db
 prisma/dev.db*
 .env
+/.next-build/
