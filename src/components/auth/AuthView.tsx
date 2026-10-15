@@ -20,7 +20,7 @@ export default function AuthView({ mode, googleEnabled }: { mode: "login" | "sig
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
-  const [dev, setDev] = useState(false);
+  const [dev, setDev] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [timer, setTimer] = useState(0);
   const callback = sp.get("callbackUrl") || (role === "REELER" ? "/reeler/dashboard" : "/dashboard");
@@ -33,8 +33,8 @@ export default function AuthView({ mode, googleEnabled }: { mode: "login" | "sig
     try { r = await fetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) }); d = await r.json().catch(() => ({})); } catch { setBusy(false); return toast.error("Network error, try again"); }
     setBusy(false);
     if (!r.ok) return toast.error(d.error || "Could not send OTP");
-    setSent(true); setDev(!!d.dev); setTimer(30);
-    toast.success(d.dev ? "Dev mode: OTP is 123456" : "OTP sent on WhatsApp/SMS");
+    setSent(true); setDev(d.dev ? d.hint || "code" : null); setTimer(30);
+    toast.success(d.dev ? (d.hint ? "Dev mode: OTP is " + d.hint : "Enter the access code shared by Reelwala") : "OTP sent on WhatsApp/SMS");
   };
   const verify = async (c = code) => {
     if (c.length !== 6) return;
@@ -102,7 +102,7 @@ export default function AuthView({ mode, googleEnabled }: { mode: "login" | "sig
                   {Array.from({ length: 6 }).map((_, i) => <span key={i} className={cn("h-14 flex-1 rounded-2xl border flex items-center justify-center font-display text-2xl font-semibold", code[i] ? "border-pink/60 bg-pink/10" : "border-fg/15 bg-surface-2")}>{code[i] || ""}</span>)}
                 </div>
                 <input autoFocus inputMode="numeric" maxLength={6} value={code} onChange={(e) => { const v = e.target.value.replace(/\D/g, ""); setCode(v); if (v.length === 6) setTimeout(() => verify(v), 50); }} placeholder="Type the 6-digit OTP" className="h-12 w-full rounded-2xl bg-surface-2 border border-fg/10 px-4 text-center text-sm tracking-[0.5em] outline-none focus:ring-2 focus:ring-pink/50" />
-                {dev && <p className="rounded-2xl bg-cyan/10 border border-cyan/30 p-3 text-xs text-cyan flex items-center gap-2"><ShieldCheck size={14} /> Dev mode: no SMS provider configured, OTP is <b>123456</b>.</p>}
+                {dev && <p className="rounded-2xl bg-cyan/10 border border-cyan/30 p-3 text-xs text-cyan flex items-center gap-2"><ShieldCheck size={14} /> {dev === "code" ? "Preview mode: enter the 6-digit access code shared by Reelwala." : <>Dev mode: no SMS provider configured, OTP is <b>{dev}</b>.</>}</p>}
                 <MagneticButton onClick={() => verify()} className="w-full" size="lg" glow disabled={busy || code.length !== 6}>{busy ? <Loader2 size={18} className="animate-spin" /> : "Verify & continue"}</MagneticButton>
                 <button onClick={send} disabled={timer > 0} className="w-full text-center text-xs text-muted disabled:opacity-50">{timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}</button>
               </motion.div>

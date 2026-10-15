@@ -47,7 +47,8 @@ Coupons seeded: `FIRST100`, `REEL20`, `SHAADI500`.
 | `DATABASE_URL` | SQLite in dev (`file:./dev.db`). For production switch `provider` in `prisma/schema.prisma` to `postgresql` and point at Supabase/Neon. |
 | `NEXTAUTH_SECRET`, `NEXTAUTH_URL` | NextAuth. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Enables "Continue with Google". |
-| `MSG91_AUTH_KEY`, `MSG91_TEMPLATE_ID` | Real OTP SMS. Without them the OTP is `123456` and logged to the server. |
+| `MSG91_AUTH_KEY`, `MSG91_TEMPLATE_ID` | Real OTP SMS. Without them the OTP is `DEV_OTP` (default `123456`), logged to the server. |
+| `DEV_OTP` | Fixed access code used when no SMS provider is configured. **Set a secret value on any public deployment**, otherwise anyone can log in as any phone number, including the admin. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Live checkout. Without them a "simulated" gateway marks payments paid. |
 | `RAZORPAY_WEBHOOK_SECRET` | Verifies `/api/payments/webhook` (`payment.captured`, `payment.failed`, `refund.processed`). |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Number behind every WhatsApp button, e.g. `919876543210`. |

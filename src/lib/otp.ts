@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 
-export const DEV_OTP = "123456";
+export const DEV_OTP = process.env.DEV_OTP || "123456";
 export const smsConfigured = () => !!process.env.MSG91_AUTH_KEY;
 
 export async function issueOtp(phone: string) {
